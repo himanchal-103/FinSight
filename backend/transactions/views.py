@@ -12,12 +12,6 @@ class TransactionViewSet(viewsets.ViewSet):
     serializer_class = TransactionSerializer
     permission_classes = [IsAdminRole]
 
-    # def get_permissions(self):
-    #     if self.action in ("list", "retrieve"):
-    #         return [IsAnalyst()]
-    #     return [IsAdminRole()]
-
-
     def list(self, request):
         transactions = self.queryset
         serializer = self.serializer_class(transactions, many=True)
