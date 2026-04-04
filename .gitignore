@@ -1,3 +1,15 @@
+.DS_Store
+db.sqlite3
+
+/backend/dashboard/migrations/
+/backend/accounts/migrations/
+/backend/transactions/migrations/
+
+/backend/dashboard/__pycache__/
+/backend/accounts/__pycache__/
+/backend/transactions/__pycache__/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
