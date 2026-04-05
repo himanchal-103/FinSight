@@ -1,10 +1,14 @@
+import json
 from datetime import datetime
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from django.core.cache import cache
 
 from accounts.permissions import IsAdminRole, IsAnalyst
 from .models import Transaction
 from .serializers import TransactionSerializer
+
+from utils.rate_limit import rate_limit
 
 # Create your views here.
 class TransactionViewSet(viewsets.ViewSet):
@@ -44,15 +48,6 @@ class TransactionViewSet(viewsets.ViewSet):
     def update(self, request, pk=None):
         try:
             transaction = self.queryset.get(id=pk)
-            if request.method == 'GET':
-                serializer = self.serializer_class(transaction)
-                return Response(
-                {
-                    "message": "Current transaction fetched successfully!",
-                    "data": serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
             serializer = self.serializer_class(transaction, data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -73,15 +68,6 @@ class TransactionViewSet(viewsets.ViewSet):
     def partial_update(self, request, pk=None):
         try:
             transaction = self.queryset.get(id=pk)
-            if request.method == 'GET':
-                serializer = self.serializer_class(transaction)
-                return Response(
-                {
-                    "message": "Current transaction fetched successfully!",
-                    "data": serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
             serializer = self.serializer_class(transaction, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
@@ -115,13 +101,29 @@ class RecentTransactionViewSet(viewsets.ViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
     permission_classes = [IsAnalyst]
+    CACHE_KEY = "recent-transactions"
+    CACHE_TTL = 60 # 1 minutes
 
+    @rate_limit(limit=5, window=60, key_func="recent-transactions")
     def retrieve(self, request):
+        # Check for cached data
+        cached = cache.get(self.CACHE_KEY)
+        if cached:
+            return Response(
+                {
+                    "message": "Recent transactions...",
+                    "source": "cache",
+                    "data": json.loads(cached)
+                },
+                status=status.HTTP_200_OK
+            )
         transactions = self.queryset[:5]
         serializer = self.serializer_class(transactions, many=True)
+        cache.set(self.CACHE_KEY, json.dumps(serializer.data), timeout=self.CACHE_TTL)  # set data from db to cache
         return Response(
             {
                 "message": "Recent transactions...",
+                "source": "db",
                 "data": serializer.data
             },
             status=status.HTTP_200_OK
@@ -129,16 +131,15 @@ class RecentTransactionViewSet(viewsets.ViewSet):
     
 
 class FilterTransactionViewSet(viewsets.ViewSet):
-    # queryset = Transaction.objects.all()
     queryset = Transaction.objects.only("id", "amount", "transaction_type", "category", "transaction_at")
     serializer_class = TransactionSerializer
     permission_classes = [IsAnalyst]
 
+    @rate_limit(limit=10, window=60, key_func="filter-transactions")
     def retrieve(self, request):
         start_param = request.query_params.get('start')
         end_param = request.query_params.get('end')
 
-        # print(start_param, end_param)
         if start_param is None:
             return Response(
                 {"error": "Invalid 'start' date. Use YYYY-MM-DD format."},
@@ -173,6 +174,7 @@ class FilterTransactionViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Filter the queryset
         queryset = self.queryset.filter(
             transaction_at__date__gte=start_date,
             transaction_at__date__lte=end_date,

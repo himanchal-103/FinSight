@@ -2,8 +2,11 @@ from django.urls import path
 from .views import TransactionViewSet, RecentTransactionViewSet, FilterTransactionViewSet
 
 
-transaction = TransactionViewSet.as_view({
+transaction_list = TransactionViewSet.as_view({
     'get': 'list',
+})
+
+transaction_create = TransactionViewSet.as_view({
     'post': 'create',
 })
 
@@ -24,8 +27,8 @@ filter_transaction = FilterTransactionViewSet.as_view({
 
 
 urlpatterns = [
-    path('list/all/', transaction, name='transaction-list'),
-    path('create/', transaction, name="transaction-create"),
+    path('list/all/', transaction_list, name='transaction-list'),
+    path('create/', transaction_create, name="transaction-create"),
 
     path('retrieve/<int:pk>/', transaction_details, name="transaction-retrieve"),
     path('update/<int:pk>/', transaction_details, name="transaction-update"),
@@ -33,5 +36,5 @@ urlpatterns = [
     path('destroy/<int:pk>/', transaction_details, name="transaction-destroy"),
 
     path('recent/', recent_transactions_list, name="recent-transactions"),
-    path('filter-transaction/', filter_transaction, name="filter_transaction"),
+    path('filter-transaction/', filter_transaction, name="filter_transactions"),
 ]   

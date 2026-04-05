@@ -1,13 +1,18 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.db.models import Sum, Count
+import json
 from decimal import Decimal
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from django.core.cache import cache
+from django.db.models import Sum, Count
 
 from transactions.models import Transaction
 from .serializers import DashboardSerializer
 
 from accounts.permissions import IsViewer, IsAnalyst, IsAdminRole
+from utils.rate_limit import rate_limit
 
 
 
@@ -15,20 +20,33 @@ from accounts.permissions import IsViewer, IsAnalyst, IsAdminRole
 class DashboardView(APIView):
     """
     GET /dashboard/
-    Returns KPI metrics: total revenue, deposits, withdrawals, net balance,
-    and a per-category breakdown for both deposits and withdrawals.
+    Returns KPI metrics: total revenue, deposits, withdrawals, net balance, and a per-category breakdown for both deposits and withdrawals.
     """
+    queryset = Transaction.objects.all()
     # permission_classes = [IsViewer, IsAnalyst, IsAdminRole]
+    CACHE_KEY = "dashboard"
+    CACHE_TTL = 10  # 10 seconds
 
+    @rate_limit(limit=5, window=30, key_func="dashboard")
     def get(self, request):
-        queryset = Transaction.objects.all()
-
+        # Check for cached data
+        cached = cache.get(self.CACHE_KEY)
+        if cached:
+            return Response(
+                {
+                    "message": "Dashboard KPIs...",
+                    "source": "cache",
+                    "data": json.loads(cached)
+                },
+                status=status.HTTP_200_OK
+            )
+        
         # Top-level KPIs
-        deposit_agg = queryset.filter(
+        deposit_agg = self.queryset.filter(
             transaction_type=Transaction.TransactionType.DEPOSIT
         ).aggregate(total=Sum("amount"), count=Count("id"))
 
-        withdrawn_agg = queryset.filter(
+        withdrawn_agg = self.queryset.filter(
             transaction_type=Transaction.TransactionType.WITHDRAWN
         ).aggregate(total=Sum("amount"), count=Count("id"))
 
@@ -39,14 +57,14 @@ class DashboardView(APIView):
 
         # Category breakdowns
         deposits_by_category = (
-            queryset.filter(transaction_type=Transaction.TransactionType.DEPOSIT)
+            self.queryset.filter(transaction_type=Transaction.TransactionType.DEPOSIT)
             .values("category")
             .annotate(total=Sum("amount"), transaction_count=Count("id"))
             .order_by("-total")
         )
 
         withdrawals_by_category = (
-            queryset.filter(transaction_type=Transaction.TransactionType.WITHDRAWN)
+            self.queryset.filter(transaction_type=Transaction.TransactionType.WITHDRAWN)
             .values("category")
             .annotate(total=Sum("amount"), transaction_count=Count("id"))
             .order_by("-total")
@@ -63,4 +81,12 @@ class DashboardView(APIView):
         }
 
         serializer = DashboardSerializer(data)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        cache.set(self.CACHE_KEY, json.dumps(serializer.data), timeout=self.CACHE_TTL)  # set data from db to cache
+        return Response(
+                {
+                    "message": "Dashboard KPIs...",
+                    "source": "db",
+                    "data": serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
