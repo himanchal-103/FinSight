@@ -3,7 +3,11 @@ Finsight is a RESTful backend API built with Django and Django REST Framework fo
 It provides endpoints for **user authentication**, **role-based authorization**, **transaction management**, and a **financial dashboard**.
 This implements caching via **Redis**, **PostgreSQL** as a database, and a **rate limiter** controlling the number of requests made to an api endpoint.
 
+Initially all user register as viewer, and later admin can elevate their role to analyst, and if necessary they can be demoted.
+
 This README.md file serves as an overview for how to run this project. For detailed documentation, refer to the **Documentation** file in the repository.
+
+Documentation link:   https://drive.google.com/file/d/1pjoDFzTxPHnvJ7Dmr8n_-y4tbGcm8LjI/view?usp=share_link
 
 ### 📁 Project Structure
 ```
