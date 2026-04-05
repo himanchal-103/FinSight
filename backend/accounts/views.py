@@ -14,7 +14,6 @@ class RegisterView(APIView):
     """
     GET  /api/accounts/register/  — browsable UI form
     POST /api/accounts/register/  — create a new user (role defaults to viewer)
-    Only admin can assign analyst or admin roles.
     """
     permission_classes = [AllowAny]
 
@@ -69,7 +68,7 @@ class LoginView(APIView):
 
 class LogoutView(APIView):
     """
-    GET  /api/accounts/logout/  — browsable UI hint
+    GET  /api/accounts/logout/  — browsable UI
     POST /api/accounts/logout/  — clears the session
     """
     permission_classes = [IsAuthenticated]

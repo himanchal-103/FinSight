@@ -17,7 +17,6 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -67,10 +66,6 @@ WSGI_APPLICATION = 'finsight.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'finsight_db',
@@ -123,24 +118,18 @@ AUTH_USER_MODEL = 'accounts.User'
 
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASS": [
+    "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
     ],
-    "DEFAULT_PERMISSION_CLASS": [
-        "rest_framework.permissions.isAuthenticated",
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ]
 }
 
 
-# SESSION_COOKIE_HTTPONLY = True
-# SESSION_COOKIE_AGE = 60 * 60 * 8
-# SESSION_SAVE_EVERY_REQUEST = True
-
-
-
 REDIS_HOST = "localhost"
 REDIS_PORT = 6379
-REDIS_DB = 0 # keep 0 for rate-limit keys; use higher DBs for cache/celery
+REDIS_DB = 0 
 
 CACHES = {
     "default": {

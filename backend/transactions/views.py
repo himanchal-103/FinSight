@@ -12,6 +12,10 @@ from utils.rate_limit import rate_limit
 
 # Create your views here.
 class TransactionViewSet(viewsets.ViewSet):
+    """
+    ViewSet for full CRUD operations on Transaction records
+    Permissions: Requires IsAdminRole
+    """
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
     permission_classes = [IsAdminRole]
@@ -98,6 +102,15 @@ class TransactionViewSet(viewsets.ViewSet):
         
 
 class RecentTransactionViewSet(viewsets.ViewSet):
+    """
+    ViewSet for retrieving the most recent transactions
+    Endpoints:
+        GET /recent-transactions/   - Retrieve the 5 most recent transactions
+ 
+    Permissions: Requires IsAnalyst
+    Rate Limit: 5 requests per 60 seconds
+    Caching: Results are cached for 60 seconds under the key 'recent-transactions'
+    """
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
     permission_classes = [IsAnalyst]
@@ -131,6 +144,15 @@ class RecentTransactionViewSet(viewsets.ViewSet):
     
 
 class FilterTransactionViewSet(viewsets.ViewSet):
+    """
+    ViewSet for filtering transactions within a date range
+    Endpoints:
+        GET /filter-transactions/?start=YYYY-MM-DD&end=YYYY-MM-DD
+ 
+    Permissions: Requires IsAnalyst
+    Rate Limit: 10 requests per 60 seconds per client
+    Query optimization: Only fetches id, amount, transaction_type, category, and transaction_at fields
+    """
     queryset = Transaction.objects.only("id", "amount", "transaction_type", "category", "transaction_at")
     serializer_class = TransactionSerializer
     permission_classes = [IsAnalyst]

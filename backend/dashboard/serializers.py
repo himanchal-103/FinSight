@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 
-
 class CategoryBreakdownSerializer(serializers.Serializer):
     category = serializers.CharField()
     total = serializers.DecimalField(max_digits=12, decimal_places=2)
