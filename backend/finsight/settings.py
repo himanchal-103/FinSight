@@ -132,6 +132,19 @@ REST_FRAMEWORK = {
 }
 
 
-SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_AGE = 60 * 60 * 8
-SESSION_SAVE_EVERY_REQUEST = True
+# SESSION_COOKIE_HTTPONLY = True
+# SESSION_COOKIE_AGE = 60 * 60 * 8
+# SESSION_SAVE_EVERY_REQUEST = True
+
+
+
+REDIS_HOST = "localhost"
+REDIS_PORT = 6379
+REDIS_DB = 0 # keep 0 for rate-limit keys; use higher DBs for cache/celery
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+    }
+}
